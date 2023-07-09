@@ -1,6 +1,9 @@
 package bfs
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/imxyy1soope1/go-rapidrescue/pkg/constants"
 )
 
@@ -11,8 +14,20 @@ type Path struct {
 	graph              *Graph
 }
 
+func (p *Path) getTurnPointsNum() int {
+	return len(p.leftTurningPoints) + len(p.rightTurningPoints)
+}
+
 func (p *Path) Len() int {
-	return len(p.path)*2 + len(p.leftTurningPoints) + len(p.rightTurningPoints)
+	return len(p.path)
+}
+
+func (p *Path) String() string {
+	builder := strings.Builder{}
+	for _, v := range p.path {
+		builder.WriteString(fmt.Sprintf("0x%04X ", v))
+	}
+	return builder.String()[:len(builder.String())-1]
 }
 
 func GetPathFromNode(g *Graph, node *node) *Path {

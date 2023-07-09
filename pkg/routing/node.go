@@ -18,7 +18,6 @@ type Data struct {
 
 type node struct {
 	id       int
-	g        int
 	goodsNum int
 	op       constants.Op
 	father   *node

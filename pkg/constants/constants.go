@@ -41,6 +41,17 @@ const (
 	RELEASE
 )
 
+func (op Op) String() string {
+	switch op {
+	case HOLD:
+		return "获取"
+	case RELEASE:
+		return "释放"
+	default:
+		return "unknown"
+	}
+}
+
 const (
 	ORIGIN = iota + 0x0A01
 	DEST

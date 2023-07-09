@@ -31,28 +31,23 @@ func (rp *RoutePlanner) nextPoints(node *node) []point {
 	return ret
 }
 
-func (rp *RoutePlanner) Plan() Path {
-	pq := bfs.NewPQ()
-	n := &node{
-		id:       constants.ORIGIN,
-		g:        0,
-		goodsNum: 0,
-		op:       constants.HOLD,
-		father:   nil,
-		data:     rp.data,
+func (rp *RoutePlanner) Plan() (path *Path) {
+	queue := []*node{
+		{
+			id:       constants.ORIGIN,
+			goodsNum: 0,
+			op:       constants.HOLD,
+			father:   nil,
+			data:     rp.data,
+		},
 	}
-	pq.Push(&bfs.Item{
-		Value:    n,
-		Priority: 0,
-		Index:    0,
-	})
 	pathTable := newPathTable(rp.graph)
-	currIndex := 1
-	for pq.Len() > 0 {
-		n := bfs.Pop(pq).Value.(*node)
-		currIndex--
+	cnt := 2000
+	for len(queue) > 0 {
+		n := queue[0]
+		queue = queue[1:]
 		for _, pt := range rp.nextPoints(n) {
-			path := pathTable.get(n.id, pt.id)
+			_ = pathTable.get(n.id, pt.id)
 			var goods int
 			if pt.pointType == constants.MATERIAL {
 				goods = int(math.Min(math.Min(
@@ -87,22 +82,28 @@ func (rp *RoutePlanner) Plan() Path {
 			}
 			newNode := &node{
 				id:       pt.id,
-				g:        path.Len()*18 - goods,
 				goodsNum: goods,
 				op:       constants.Op(pt.pointType),
 				father:   n,
 				data:     &newData,
 			}
 			if newData.RequiredGoods == 0 {
-				return GetPathFromNode(pathTable, newNode)
+				cnt--
+				if path != nil {
+					newPath := GetPathFromNode(pathTable, newNode)
+					if path.Len() > newPath.Len() {
+						path = newPath
+					}
+					if cnt == 0 {
+						return
+					}
+				} else {
+					path = GetPathFromNode(pathTable, newNode)
+				}
+				continue
 			}
-			pq.Push(&bfs.Item{
-				Value:    newNode,
-				Priority: 0,
-				Index:    currIndex,
-			})
-			currIndex++
+			queue = append(queue, newNode)
 		}
 	}
-	return nil
+	return
 }

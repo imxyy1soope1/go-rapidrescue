@@ -115,41 +115,30 @@ func (g *Graph) nonTuring(id int) bool {
 }
 
 func (g *Graph) Bfs(origin, dest int) (path *Path) {
-	pq := []*Item{
-		&Item{&node{
+	queue := []*node{
+		{
 			id:        origin,
 			direction: constants.UNDEF_DIRECTION,
 			father:    nil,
-		}, 0, 0},
+		},
 	}
 	for _, r := range g.brokenRoads {
 		if r[0] == origin || r[1] == origin || r[0] == dest || r[1] == dest {
 			return
 		}
 	}
-	cnt := 3
-	currIndex := 1
+	cnt := 4
 	for {
-		if len(pq) == 0 {
+		if len(queue) == 0 {
 			break
 		}
-		n := pq[0].Value.(*node)
-		pq = pq[1:]
-		currIndex--
+		n := queue[0]
+		queue = queue[1:]
 		for _, neigh := range g.neighbers(n.id) {
 			if n.father != nil && neigh == n.father.id {
 				continue
 			}
 			direction := g.getDirection(n.id, neigh)
-			var priority int
-			if direction == n.direction {
-				priority = 1
-			} else if g.nonTuring(neigh) {
-				continue
-			} else {
-				priority = 0
-			}
-			currIndex++
 			nd := &node{
 				id:        neigh,
 				direction: direction,
@@ -159,7 +148,7 @@ func (g *Graph) Bfs(origin, dest int) (path *Path) {
 				cnt--
 				if path != nil {
 					newpath := GetPathFromNode(g, nd)
-					if path.Len() > newpath.Len() {
+					if path.getTurnPointsNum() > newpath.getTurnPointsNum() {
 						path = newpath
 					}
 					if cnt == 0 {
@@ -168,8 +157,9 @@ func (g *Graph) Bfs(origin, dest int) (path *Path) {
 				} else {
 					path = GetPathFromNode(g, nd)
 				}
+				continue
 			}
-			pq = append(pq, &Item{nd, priority, currIndex})
+			queue = append(queue, nd)
 		}
 	}
 	return

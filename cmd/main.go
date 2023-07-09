@@ -30,5 +30,5 @@ func main() {
 	}
 	routePlanner := routing.NewRoutePlanner(graph, data)
 	path := routePlanner.Plan()
-	fmt.Printf("%+v\n", path)
+	fmt.Printf("%s\n", path)
 }
