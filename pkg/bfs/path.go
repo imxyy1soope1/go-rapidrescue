@@ -9,13 +9,14 @@ import (
 
 type Path struct {
 	path               []int
-	leftTurningPoints  []int
-	rightTurningPoints []int
-	graph              *Graph
+	LeftTurningPoints  []int
+	RightTurningPoints []int
+	Dest               int
+	Graph              *Graph
 }
 
 func (p *Path) Len() int {
-	return len(p.path) + len(p.leftTurningPoints) + len(p.rightTurningPoints)
+	return len(p.path) + len(p.LeftTurningPoints) + len(p.RightTurningPoints)
 }
 
 func (p *Path) String() string {
@@ -36,7 +37,7 @@ func GetPathFromNode(g *Graph, node *node) *Path {
 	for i, j := 0, len(p)-1; i < j; i, j = i+1, j-1 {
 		p[i], p[j] = p[j], p[i]
 	}
-	path := &Path{path: p, graph: g}
+	path := &Path{path: p, Graph: g, Dest: node.id}
 	path.getTurningPoints()
 	return path
 }
@@ -64,16 +65,16 @@ func getTurningDirection(first, second constants.Direction) constants.RotaionDir
 func (p *Path) getTurningPoints() {
 	directions := make([]constants.Direction, len(p.path)-1)
 	for i := 0; i < len(p.path)-1; i++ {
-		directions[i] = p.graph.getDirection(p.path[i], p.path[i+1])
+		directions[i] = p.Graph.getDirection(p.path[i], p.path[i+1])
 	}
-	p.leftTurningPoints = make([]int, 0)
-	p.rightTurningPoints = make([]int, 0)
+	p.LeftTurningPoints = make([]int, 0)
+	p.RightTurningPoints = make([]int, 0)
 	for i := 1; i < len(directions); i++ {
 		d := getTurningDirection(directions[i-1], directions[i])
 		if d == constants.LEFT {
-			p.leftTurningPoints = append(p.leftTurningPoints, p.path[i])
+			p.LeftTurningPoints = append(p.LeftTurningPoints, p.path[i])
 		} else if d == constants.RIGHT {
-			p.rightTurningPoints = append(p.rightTurningPoints, p.path[i])
+			p.RightTurningPoints = append(p.RightTurningPoints, p.path[i])
 		}
 	}
 }

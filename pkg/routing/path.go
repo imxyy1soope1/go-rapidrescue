@@ -6,6 +6,7 @@ import (
 
 	"github.com/imxyy1soope1/go-rapidrescue/pkg/bfs"
 	"github.com/imxyy1soope1/go-rapidrescue/pkg/constants"
+	"github.com/imxyy1soope1/go-rapidrescue/pkg/json"
 )
 
 type p struct {
@@ -15,6 +16,23 @@ type p struct {
 }
 
 type Path []p
+
+func (pth *Path) ToResult() json.Result {
+	res := json.Result{}
+	for _, v := range *pth {
+		res.Path = append(res.Path, json.AtomPath{
+			Dest:               v.path.Dest,
+			LeftTurningPoints:  v.path.LeftTurningPoints,
+			RightTurningPoints: v.path.RightTurningPoints,
+			Op:                 v.op,
+			GoodsNum:           v.goodsNum,
+		})
+	}
+	pt := []p(*pth)
+	res.Map = fmt.Sprint(pt[0].path.Graph)
+	res.String = fmt.Sprint(pth)
+	return res
+}
 
 func (p *Path) Len() int {
 	sum := 0
@@ -27,7 +45,11 @@ func (p *Path) Len() int {
 func (p *Path) String() string {
 	builder := strings.Builder{}
 	for _, v := range *p {
-		builder.WriteString(fmt.Sprintf("%s %s %d\n", v.path, v.op, v.goodsNum))
+		if v.op == constants.END {
+			builder.WriteString("去往0x0A02，结束")
+		} else {
+			builder.WriteString(fmt.Sprintf("去往0x%04X, %s%d件物资\n", v.path.Dest, v.op, v.goodsNum))
+		}
 	}
 	return builder.String()
 }
@@ -36,7 +58,7 @@ func GetPathFromNode(pt *pathTable, n *node) *Path {
 	path := Path{
 		p{
 			path:     pt.get(n.id, constants.DEST),
-			op:       constants.UNDEF_OP,
+			op:       constants.END,
 			goodsNum: 0,
 		},
 	}

@@ -38,19 +38,21 @@ const MAX_HOLDING_GOODS = 18
 type Op uint8
 
 const (
-	UNDEF_OP Op = iota
+	END Op = iota
 	HOLD
 	RELEASE
 )
 
 func (op Op) String() string {
 	switch op {
+	case END:
+		return "结束"
 	case HOLD:
-		return "获取"
+		return "装载"
 	case RELEASE:
-		return "释放"
+		return "卸下"
 	default:
-		return "unknown"
+		return "未知"
 	}
 }
 

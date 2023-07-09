@@ -75,7 +75,9 @@ Loop:
 
 func (rp *RoutePlanner) newWorker(n *node, nodeChan chan *node, pathChan chan *Path, workerDoneChan chan struct{}, pathT *pathTable) {
 	for _, pt := range rp.nextPoints(n) {
-		_ = pathT.get(n.id, pt.id)
+		if pth := pathT.get(n.id, pt.id); pth == nil {
+			continue
+		}
 		var goods int
 		if pt.pointType == constants.MATERIAL {
 			goods = int(math.Min(math.Min(

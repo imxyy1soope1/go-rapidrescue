@@ -1,34 +1,63 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/imxyy1soope1/go-rapidrescue/pkg/bfs"
+	. "github.com/imxyy1soope1/go-rapidrescue/pkg/json"
 	"github.com/imxyy1soope1/go-rapidrescue/pkg/routing"
 )
 
 func main() {
-	g := [][]int{
-		{0x0000, 0x0000, 0x0000, 0x0000, 0x0B01, 0x0000, 0x0B02, 0x0000, 0x0B03, 0x0000, 0x0000},
-		{0x0000, 0x0000, 0x0000, 0x0000, -0x001, 0x0000, -0x001, 0x0000, -0x001, 0x0000, 0x0000},
-		{0x0A01, -0x001, -0x001, -0x001, 0x0001, -0x001, 0x0002, -0x001, 0x0003, -0x001, 0x0C01},
-		{0x0000, 0x0000, 0x0000, 0x0000, -0x001, 0x0000, -0x001, 0x0000, -0x001, 0x0000, 0x0000},
-		{0x0000, 0x0000, 0x0C07, 0x0000, -0x001, 0x0000, -0x001, 0x0000, -0x001, 0x0000, 0x0000},
-		{0x0000, 0x0000, -0x001, 0x0000, -0x001, 0x0000, -0x001, 0x0000, -0x001, 0x0000, 0x0000},
-		{0x0000, 0x0000, 0x0004, -0x001, 0x0005, -0x001, 0x0006, -0x001, 0x0007, -0x001, 0x0C02},
-		{0x0000, 0x0000, -0x001, 0x0000, -0x001, 0x0000, -0x001, 0x0000, -0x001, 0x0000, 0x0000},
-		{0x0C06, -0x001, 0x0008, -0x001, 0x0009, -0x001, 0x000A, -0x001, 0x000B, -0x001, 0x0C03},
-		{0x0000, 0x0000, -0x001, 0x0000, -0x001, 0x0000, -0x001, 0x0000, 0x0000, 0x0000, 0x0000},
-		{0x0000, 0x0000, 0x0A02, 0x0000, 0x0C05, 0x0000, 0x0C04, 0x0000, 0x0000, 0x0000, 0x0000},
+	var (
+		configFile string
+		config     Config
+		errHandler = func(err error) {
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+		}
+	)
+
+	if len(os.Args) > 2 {
+		fmt.Fprintf(os.Stderr, "Usage: %s [config.json]\n", os.Args[0])
+		os.Exit(1)
+	} else if len(os.Args) == 2 {
+		configFile = os.Args[1]
+	} else {
+		configFile = "./config.json"
 	}
-	graph := bfs.NewGraph(g, nil, nil)
+
+	f, err := os.Open(configFile)
+	errHandler(err)
+	defer f.Close()
+
+	configData, err := io.ReadAll(f)
+	errHandler(err)
+
+	err = json.Unmarshal(configData, &config)
+	errHandler(err)
+
+	graph := bfs.NewGraph(config.Map, config.BrokenRoads, config.NonTuringPoints)
 	data := &routing.Data{
 		Carrying:       0,
-		RequiredGoods:  50,
-		MaterialPoints: map[int]int{0x0B01: 30, 0x0B02: 20, 0x0B03: 40},
-		Quarters:       map[int]int{0x0C01: 10, 0x0C02: 8, 0x0C03: 18, 0x0C04: 10, 0x0C05: 15, 0x0C06: 5, 0x0C07: 10},
+		RequiredGoods:  config.RequiredGoods,
+		MaterialPoints: config.MaterialPoints,
+		Quarters:       config.Quarters,
 	}
 	routePlanner := routing.NewRoutePlanner(graph, data)
-	path := routePlanner.Plan()
-	fmt.Printf("%s\n", path)
+	routeResult := routePlanner.Plan().ToResult()
+
+	resultFile, err := os.Create("result.json")
+	errHandler(err)
+	defer resultFile.Close()
+
+	err = json.NewEncoder(resultFile).Encode(routeResult)
+	errHandler(err)
+
+	fmt.Println("Done!")
 }

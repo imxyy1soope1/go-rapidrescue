@@ -1,18 +1,35 @@
 package bfs
 
 import (
+	"fmt"
 	"math"
+	"strings"
 
 	"github.com/imxyy1soope1/go-rapidrescue/pkg/constants"
 )
 
-type road [2]int
+type road = [2]int
 
 type Graph struct {
 	graph           [][]int
 	links           map[int][]int
 	brokenRoads     []road
 	nonTuringPoints []int
+}
+
+func (g *Graph) String() string {
+	builder := strings.Builder{}
+	for _, line := range g.graph {
+		for _, point := range line {
+			if point == int(constants.ROAD) {
+				builder.WriteString("-0x001")
+			} else {
+				builder.WriteString(fmt.Sprintf("0x%04X ", point))
+			}
+		}
+		builder.WriteString("\n")
+	}
+	return builder.String()
 }
 
 func NewGraph(graph [][]int, brokenRoads []road, nonTuringPoints []int) *Graph {
@@ -128,10 +145,7 @@ func (g *Graph) Bfs(origin, dest int) (path *Path) {
 		}
 	}
 	cnt := 4
-	for {
-		if len(queue) == 0 {
-			break
-		}
+	for len(queue) > 0 {
 		n := queue[0]
 		queue = queue[1:]
 		for _, neigh := range g.neighbers(n.id) {
