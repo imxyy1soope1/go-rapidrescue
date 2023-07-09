@@ -1,23 +1,26 @@
 package routing
 
 import (
+	"sync"
+
 	"github.com/imxyy1soope1/go-rapidrescue/pkg/bfs"
 )
 
 type pathTable struct {
-	m     map[int]*bfs.Path
+	m     sync.Map
 	graph *bfs.Graph
 }
 
 func newPathTable(graph *bfs.Graph) *pathTable {
-	return &pathTable{m: make(map[int]*bfs.Path), graph: graph}
+	return &pathTable{m: sync.Map{}, graph: graph}
 }
 
 func (pt *pathTable) get(origin, dest int) *bfs.Path {
-	if path, ok := pt.m[origin+dest*0x10000]; ok {
-		return path
+	if path, ok := pt.m.Load(origin + dest*0x10000); ok {
+		return path.(*bfs.Path)
 	} else {
-		pt.m[origin+dest*0x10000] = pt.graph.Bfs(origin, dest)
+		path := pt.graph.Bfs(origin, dest)
+		pt.m.Store(origin+dest*0x10000, path)
+		return path
 	}
-	return pt.m[origin+dest*0x10000]
 }

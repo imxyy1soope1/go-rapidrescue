@@ -14,12 +14,8 @@ type Path struct {
 	graph              *Graph
 }
 
-func (p *Path) getTurnPointsNum() int {
-	return len(p.leftTurningPoints) + len(p.rightTurningPoints)
-}
-
 func (p *Path) Len() int {
-	return len(p.path)
+	return len(p.path) + len(p.leftTurningPoints) + len(p.rightTurningPoints)
 }
 
 func (p *Path) String() string {

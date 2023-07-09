@@ -148,7 +148,7 @@ func (g *Graph) Bfs(origin, dest int) (path *Path) {
 				cnt--
 				if path != nil {
 					newpath := GetPathFromNode(g, nd)
-					if path.getTurnPointsNum() > newpath.getTurnPointsNum() {
+					if path.Len() > newpath.Len() {
 						path = newpath
 					}
 					if cnt == 0 {

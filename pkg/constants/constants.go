@@ -1,5 +1,7 @@
 package constants
 
+import "runtime"
+
 type PointType int
 
 const (
@@ -56,3 +58,5 @@ const (
 	ORIGIN = iota + 0x0A01
 	DEST
 )
+
+var MAX_WORKER_COUNT = runtime.NumCPU()

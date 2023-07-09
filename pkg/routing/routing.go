@@ -32,78 +32,95 @@ func (rp *RoutePlanner) nextPoints(node *node) []point {
 }
 
 func (rp *RoutePlanner) Plan() (path *Path) {
-	queue := []*node{
-		{
-			id:       constants.ORIGIN,
-			goodsNum: 0,
-			op:       constants.HOLD,
-			father:   nil,
-			data:     rp.data,
-		},
+	nodeChan := make(chan *node, 1)
+	pathChan := make(chan *Path, 100)
+	workerDoneChan := make(chan struct{})
+	pathT := newPathTable(rp.graph)
+	workerCount := 0
+	cnt := 0
+	nodeChan <- &node{
+		id:       constants.ORIGIN,
+		goodsNum: 0,
+		op:       constants.HOLD,
+		father:   nil,
+		data:     rp.data,
 	}
-	pathTable := newPathTable(rp.graph)
-	cnt := 2000
-	for len(queue) > 0 {
-		n := queue[0]
-		queue = queue[1:]
-		for _, pt := range rp.nextPoints(n) {
-			_ = pathTable.get(n.id, pt.id)
-			var goods int
-			if pt.pointType == constants.MATERIAL {
-				goods = int(math.Min(math.Min(
-					float64(constants.MAX_HOLDING_GOODS-n.data.Carrying),
-					float64(n.data.MaterialPoints[pt.id]),
-				), float64(n.data.RequiredGoods-n.data.Carrying)))
-			} else {
-				goods = int(math.Min(math.Min(
-					float64(n.data.Carrying),
-					float64(n.data.Quarters[pt.id]),
-				), float64(n.data.RequiredGoods)))
+
+Loop:
+	for {
+		select {
+		case newPath := <-pathChan:
+			cnt++
+			if path == nil || newPath.Len() < path.Len() {
+				path = newPath
 			}
-			if goods <= 0 {
+			if cnt >= 10000 {
+				break Loop
+			}
+		case <-workerDoneChan:
+			workerCount--
+			if workerCount == 0 {
+				break Loop
+			}
+		case n := <-nodeChan:
+			if workerCount > constants.MAX_WORKER_COUNT {
 				continue
 			}
-			newData := *n.data
-			newData.MaterialPoints = make(map[int]int)
-			newData.Quarters = make(map[int]int)
-			for id, g := range n.data.MaterialPoints {
-				newData.MaterialPoints[id] = g
-			}
-			for id, g := range n.data.Quarters {
-				newData.Quarters[id] = g
-			}
-			if pt.pointType == constants.MATERIAL {
-				newData.MaterialPoints[pt.id] -= goods
-				newData.Carrying += goods
-			} else {
-				newData.Quarters[pt.id] -= goods
-				newData.Carrying -= goods
-				newData.RequiredGoods -= goods
-			}
-			newNode := &node{
-				id:       pt.id,
-				goodsNum: goods,
-				op:       constants.Op(pt.pointType),
-				father:   n,
-				data:     &newData,
-			}
-			if newData.RequiredGoods == 0 {
-				cnt--
-				if path != nil {
-					newPath := GetPathFromNode(pathTable, newNode)
-					if path.Len() > newPath.Len() {
-						path = newPath
-					}
-					if cnt == 0 {
-						return
-					}
-				} else {
-					path = GetPathFromNode(pathTable, newNode)
-				}
-				continue
-			}
-			queue = append(queue, newNode)
+			workerCount++
+			go rp.newWorker(n, nodeChan, pathChan, workerDoneChan, pathT)
 		}
 	}
 	return
+}
+
+func (rp *RoutePlanner) newWorker(n *node, nodeChan chan *node, pathChan chan *Path, workerDoneChan chan struct{}, pathT *pathTable) {
+	for _, pt := range rp.nextPoints(n) {
+		_ = pathT.get(n.id, pt.id)
+		var goods int
+		if pt.pointType == constants.MATERIAL {
+			goods = int(math.Min(math.Min(
+				float64(constants.MAX_HOLDING_GOODS-n.data.Carrying),
+				float64(n.data.MaterialPoints[pt.id]),
+			), float64(n.data.RequiredGoods-n.data.Carrying)))
+		} else {
+			goods = int(math.Min(math.Min(
+				float64(n.data.Carrying),
+				float64(n.data.Quarters[pt.id]),
+			), float64(n.data.RequiredGoods)))
+		}
+		if goods <= 0 {
+			continue
+		}
+		newData := *n.data
+		newData.MaterialPoints = make(map[int]int)
+		newData.Quarters = make(map[int]int)
+		for id, g := range n.data.MaterialPoints {
+			newData.MaterialPoints[id] = g
+		}
+		for id, g := range n.data.Quarters {
+			newData.Quarters[id] = g
+		}
+		if pt.pointType == constants.MATERIAL {
+			newData.MaterialPoints[pt.id] -= goods
+			newData.Carrying += goods
+		} else {
+			newData.Quarters[pt.id] -= goods
+			newData.Carrying -= goods
+			newData.RequiredGoods -= goods
+		}
+		newNode := &node{
+			id:       pt.id,
+			goodsNum: goods,
+			op:       constants.Op(pt.pointType),
+			father:   n,
+			data:     &newData,
+		}
+		if newData.RequiredGoods == 0 {
+			pathChan <- GetPathFromNode(pathT, newNode)
+			continue
+		}
+		nodeChan <- newNode
+	}
+
+	workerDoneChan <- struct{}{}
 }
