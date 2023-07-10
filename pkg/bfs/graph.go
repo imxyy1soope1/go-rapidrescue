@@ -22,7 +22,7 @@ func (g *Graph) String() string {
 	for _, line := range g.graph {
 		for _, point := range line {
 			if point == int(constants.ROAD) {
-				builder.WriteString("-0x001")
+				builder.WriteString("-0x001 ")
 			} else {
 				builder.WriteString(fmt.Sprintf("0x%04X ", point))
 			}

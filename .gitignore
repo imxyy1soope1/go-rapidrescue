@@ -1,2 +1,6 @@
 .vscode/**
 bin/**
+venv/**
+result/**
+config/**
+!config/config_dumper.py

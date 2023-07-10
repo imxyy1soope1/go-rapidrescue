@@ -1,15 +1,10 @@
 package json
 
-import (
-	"github.com/imxyy1soope1/go-rapidrescue/pkg/constants"
-)
-
 type AtomPath struct {
-	Dest               int
-	LeftTurningPoints  []int
-	RightTurningPoints []int
-	Op                 constants.Op
-	GoodsNum           int
+	Dest               int   `json:"dest"`
+	LeftTurningPoints  []int `json:"left_turning_points"`
+	RightTurningPoints []int `json:"right_turning_points"`
+	GoodsNum           int   `json:"goods_num"`
 }
 
 type Result struct {

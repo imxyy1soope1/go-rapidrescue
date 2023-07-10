@@ -24,7 +24,6 @@ func (pth *Path) ToResult() json.Result {
 			Dest:               v.path.Dest,
 			LeftTurningPoints:  v.path.LeftTurningPoints,
 			RightTurningPoints: v.path.RightTurningPoints,
-			Op:                 v.op,
 			GoodsNum:           v.goodsNum,
 		})
 	}
